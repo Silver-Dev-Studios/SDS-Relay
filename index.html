@@ -1,1 +1,627 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relay — API Workspace</title>
+<style>
+:root{
+  --sds-1:#7f0a4f; --sds-2:#a61c23; --sds-3:#df2654; --sds-4:#ec775f; --sds-5:#ebcdb7;
+  --bg:#1c0612; --panel:#290a1b; --panel-2:#340d23; --line:#4d1534; --text:#f6e6d9; --muted:#b99a9a;
+  --ok:#8fd19e; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+::selection{background:var(--sds-3);color:#fff}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px}::-webkit-scrollbar-track{background:transparent}
 
+header{display:flex;align-items:center;gap:14px;padding:10px 16px;background:linear-gradient(90deg,var(--sds-1),var(--sds-2));border-bottom:1px solid var(--line)}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.3px;font-size:16px;color:var(--sds-5)}
+.logo i{width:26px;height:26px;border-radius:8px;background:var(--sds-5);display:grid;place-items:center;color:var(--sds-1);font-style:normal;font-weight:800}
+.logo small{font-weight:500;opacity:.75;font-size:12px}
+header .sp{flex:1}
+.btn{background:rgba(255,255,255,.08);border:1px solid rgba(235,205,183,.28);color:var(--sds-5);padding:6px 12px;border-radius:8px;transition:.15s}
+.btn:hover{background:rgba(255,255,255,.16)}
+.btn.primary{background:var(--sds-3);border-color:var(--sds-3);color:#fff;font-weight:600}
+.btn.primary:hover{background:var(--sds-4);border-color:var(--sds-4)}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--muted)}
+.btn.ghost:hover{color:var(--text);border-color:var(--sds-4)}
+.btn.sm{padding:3px 8px;font-size:12px}
+
+.app{flex:1;display:grid;grid-template-columns:290px 1fr;min-height:0}
+aside{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);padding:0 8px;flex-shrink:0}
+.tab{background:none;border:0;padding:10px 12px;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--sds-5);border-bottom-color:var(--sds-3)}
+.tab .n{background:var(--line);border-radius:10px;padding:0 6px;font-size:11px;margin-left:4px;color:var(--sds-5)}
+.side-body{flex:1;overflow:auto;padding:10px}
+.side-actions{display:flex;gap:6px;margin-bottom:10px}
+.empty{color:var(--muted);text-align:center;padding:28px 10px;font-size:13px}
+.coll{margin-bottom:6px}
+.coll-h{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:8px;cursor:pointer;font-weight:600}
+.coll-h:hover{background:var(--panel-2)}
+.coll-h .car{transition:.15s;color:var(--muted);font-size:10px}
+.coll.open .car{transform:rotate(90deg)}
+.coll-h .name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.coll-h .acts,.req .acts{display:none;gap:2px}
+.coll-h:hover .acts,.req:hover .acts{display:flex}
+.ic{background:none;border:0;color:var(--muted);padding:2px 5px;border-radius:5px;font-size:12px}
+.ic:hover{color:#fff;background:var(--sds-2)}
+.coll-items{display:none;margin-left:12px;border-left:1px solid var(--line);padding-left:6px}
+.coll.open .coll-items{display:block}
+.req{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:7px;cursor:pointer}
+.req:hover{background:var(--panel-2)}
+.req.active{background:var(--sds-1)}
+.req .t{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.req .u{display:block;color:var(--muted);font-size:11px;font-family:var(--mono);overflow:hidden;text-overflow:ellipsis}
+.m{font:700 10px var(--mono);min-width:38px;text-align:left;letter-spacing:.3px}
+.m.GET{color:#8fd19e}.m.POST{color:var(--sds-4)}.m.PUT{color:#e8c06a}.m.DELETE{color:var(--sds-3)}.m.PATCH{color:#b9a3ff}.m.HEAD,.m.OPTIONS{color:var(--sds-5)}
+
+main{display:flex;flex-direction:column;min-width:0;min-height:0}
+.reqbar{display:flex;gap:8px;padding:14px 16px 10px;align-items:stretch}
+.urlwrap{flex:1;display:flex;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0}
+.urlwrap:focus-within{border-color:var(--sds-4);box-shadow:0 0 0 3px rgba(236,119,95,.18)}
+#method{background:var(--panel-2);border:0;border-right:1px solid var(--line);padding:0 10px;font-weight:700;font-family:var(--mono);outline:none}
+#method option{background:var(--panel)}
+#url{flex:1;background:transparent;border:0;outline:none;padding:11px 12px;font-family:var(--mono);min-width:0}
+#send{padding:0 26px;font-size:14px}
+#send[disabled]{opacity:.6;cursor:progress}
+.namebar{display:flex;align-items:center;gap:8px;padding:0 16px 8px;color:var(--muted);font-size:12px}
+#reqName{background:transparent;border:0;border-bottom:1px dashed transparent;color:var(--text);outline:none;padding:2px 0;min-width:160px}
+#reqName:hover,#reqName:focus{border-bottom-color:var(--sds-4)}
+
+.split{flex:1;display:grid;grid-template-rows:minmax(150px,45%) 1fr;min-height:0;border-top:1px solid var(--line)}
+.pane{display:flex;flex-direction:column;min-height:0}
+.pane + .pane{border-top:1px solid var(--line)}
+.pane-body{flex:1;overflow:auto;padding:12px 16px;min-height:0}
+.kv{width:100%;border-collapse:collapse}
+.kv td{padding:0 4px 4px 0}
+.kv input[type=text]{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:6px 9px;outline:none;font-family:var(--mono);font-size:13px}
+.kv input[type=text]:focus,textarea:focus,.field:focus{border-color:var(--sds-4)}
+.kv td.c{width:28px;text-align:center}
+.kv input[type=checkbox]{accent-color:var(--sds-3)}
+.kv .x{opacity:.6}
+.field,textarea{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;outline:none;width:100%}
+textarea{font-family:var(--mono);font-size:13px;resize:none;height:100%;min-height:110px;tab-size:2}
+.row{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.row label{color:var(--muted);font-size:12px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:none;border:0;padding:4px 11px;color:var(--muted);font-size:12px}
+.seg button.on{background:var(--sds-1);color:var(--sds-5)}
+.hint{color:var(--muted);font-size:12px}
+
+.resbar{display:flex;align-items:center;gap:14px;padding:0 12px 0 8px;border-bottom:1px solid var(--line);flex-shrink:0}
+.resbar .tabs{border:0;flex:1}
+.stat{display:flex;gap:14px;align-items:center;font-size:12px;color:var(--muted)}
+.stat b{color:var(--text);font-weight:600}
+.badge{font:700 12px var(--mono);padding:3px 9px;border-radius:6px;background:var(--line);color:var(--sds-5)}
+.badge.s2{background:#1f5a34;color:#bff0cb}.badge.s3{background:#7a5a14;color:#ffe3a0}.badge.s4{background:var(--sds-2);color:#fff}.badge.s5{background:var(--sds-3);color:#fff}.badge.err{background:var(--sds-3);color:#fff}
+pre.out{margin:0;font:13px/1.55 var(--mono);white-space:pre-wrap;word-break:break-word;color:var(--text)}
+.j-k{color:var(--sds-4)}.j-s{color:var(--sds-5)}.j-n{color:#e8c06a}.j-b{color:var(--sds-3);font-weight:600}.j-z{color:var(--muted)}
+.placeholder{height:100%;display:grid;place-items:center;text-align:center;color:var(--muted)}
+.placeholder .big{font-size:34px;color:var(--sds-4);margin-bottom:6px}
+.placeholder kbd{background:var(--panel-2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-family:var(--mono);font-size:12px}
+.hdrs{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+.hdrs td{padding:5px 10px 5px 0;border-bottom:1px solid var(--line);vertical-align:top;word-break:break-all}
+.hdrs td:first-child{color:var(--sds-4);width:30%;white-space:nowrap}
+.timing{max-width:560px}
+.tbar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--panel-2);margin:8px 0 14px}
+.tbar span{display:block;min-width:2px}
+.tl{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);font-size:13px}
+.tl i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px}
+.errbox{border:1px solid var(--sds-2);background:rgba(166,28,35,.2);border-radius:10px;padding:14px}
+.errbox h4{margin:0 0 6px;color:var(--sds-4)}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--sds-1);border-radius:14px;padding:0;width:min(560px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.6)}
+dialog::backdrop{background:rgba(20,2,10,.7);backdrop-filter:blur(3px)}
+.dlg-h{padding:14px 18px;background:linear-gradient(90deg,var(--sds-1),var(--sds-2));font-weight:700;color:var(--sds-5)}
+.dlg-b{padding:16px 18px}
+.dlg-b label{display:block;color:var(--muted);font-size:12px;margin:10px 0 4px}
+.dlg-f{padding:12px 18px;display:flex;justify-content:flex-end;gap:8px;border-top:1px solid var(--line)}
+#curlText{min-height:140px;height:140px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--sds-5);color:var(--sds-1);padding:8px 16px;border-radius:9px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:99}
+.toast.show{opacity:1;transform:translateX(-50%)}
+
+@media (max-width:820px){
+  .app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  aside{max-height:220px;border-right:0;border-bottom:1px solid var(--line)}
+  .reqbar{flex-wrap:wrap}.logo small{display:none}
+  .split{grid-template-rows:minmax(220px,auto) minmax(260px,1fr)}
+  main{overflow:auto}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><i>R</i> Relay <small>API workspace</small></div>
+  <div class="sp"></div>
+  <button class="btn" id="btnImport">⇣ Import cURL</button>
+  <button class="btn" id="btnCopyCurl">⧉ Copy as cURL</button>
+  <button class="btn primary" id="btnSave">★ Save</button>
+</header>
+
+<div class="app">
+  <aside>
+    <div class="tabs">
+      <button class="tab active" data-side="collections">Collections<span class="n" id="nColl">0</span></button>
+      <button class="tab" data-side="history">History<span class="n" id="nHist">0</span></button>
+    </div>
+    <div class="side-body" id="sideBody"></div>
+  </aside>
+
+  <main>
+    <div class="reqbar">
+      <div class="urlwrap">
+        <select id="method">
+          <option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option><option>HEAD</option><option>OPTIONS</option>
+        </select>
+        <input id="url" placeholder="https://api.example.com/endpoint" spellcheck="false" autocomplete="off">
+      </div>
+      <button class="btn primary" id="send">Send</button>
+    </div>
+    <div class="namebar">
+      <span>Request:</span><input id="reqName" value="Untitled request" spellcheck="false">
+      <span id="dirty"></span>
+    </div>
+
+    <div class="split">
+      <section class="pane">
+        <div class="tabs" id="reqTabs">
+          <button class="tab active" data-rt="params">Params<span class="n" id="nParams">0</span></button>
+          <button class="tab" data-rt="headers">Headers<span class="n" id="nHeaders">0</span></button>
+          <button class="tab" data-rt="body">Body</button>
+          <button class="tab" data-rt="auth">Auth</button>
+        </div>
+        <div class="pane-body" id="reqBody"></div>
+      </section>
+
+      <section class="pane">
+        <div class="resbar">
+          <div class="tabs" id="resTabs">
+            <button class="tab active" data-st="body">Body</button>
+            <button class="tab" data-st="raw">Raw</button>
+            <button class="tab" data-st="headers">Headers<span class="n" id="nResH">0</span></button>
+            <button class="tab" data-st="timing">Timing</button>
+          </div>
+          <div class="stat" id="stat"></div>
+          <button class="btn ghost sm" id="btnCopyRes" title="Copy response body">Copy</button>
+        </div>
+        <div class="pane-body" id="resBody"></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<dialog id="dlgImport">
+  <div class="dlg-h">Import from cURL</div>
+  <div class="dlg-b">
+    <p class="hint" style="margin-top:0">Paste a cURL command — method, URL, headers, body and basic auth are picked up.</p>
+    <textarea id="curlText" spellcheck="false" placeholder="curl -X POST https://httpbin.org/post -H 'Content-Type: application/json' -d '{&quot;hello&quot;:&quot;world&quot;}'"></textarea>
+  </div>
+  <div class="dlg-f"><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="doImport">Import</button></div>
+</dialog>
+
+<dialog id="dlgSave">
+  <div class="dlg-h">Save request</div>
+  <div class="dlg-b">
+    <label>Name</label><input class="field" id="saveName">
+    <label>Collection</label>
+    <select class="field" id="saveColl"></select>
+    <input class="field" id="saveNewColl" placeholder="New collection name" style="margin-top:8px;display:none">
+  </div>
+  <div class="dlg-f"><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="doSave">Save</button></div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const uid = () => Math.random().toString(36).slice(2,10);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const store = {
+  get(k, d){ try{ return JSON.parse(localStorage.getItem(k)) ?? d }catch{ return d } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)) }catch{} }
+};
+
+/* ---------- state ---------- */
+const blank = () => ({ id: uid(), name:'Untitled request', method:'GET', url:'',
+  params:[{on:true,k:'',v:''}], headers:[{on:true,k:'',v:''}],
+  bodyMode:'none', body:'', auth:{type:'none', user:'', pass:'', token:''} });
+
+let req = blank();
+let collections = store.get('relay.collections', []);
+let history = store.get('relay.history', []);
+let openColl = new Set(store.get('relay.open', []));
+let sideTab = 'collections', reqTab = 'params', resTab = 'body';
+let savedRef = null;       // {cid, rid} of loaded saved request
+let res = null;            // last response
+let controller = null;
+
+if(!collections.length){
+  collections = [{ id: uid(), name:'Getting started', requests:[
+    mk('List posts','GET','https://jsonplaceholder.typicode.com/posts?_limit=3'),
+    { ...mk('Create post','POST','https://jsonplaceholder.typicode.com/posts'), bodyMode:'json',
+      body:'{\n  "title": "hello",\n  "body": "from Relay",\n  "userId": 1\n}',
+      headers:[{on:true,k:'Content-Type',v:'application/json'},{on:true,k:'',v:''}] },
+    mk('Echo request','GET','https://httpbin.org/anything?demo=1'),
+  ]}];
+  openColl.add(collections[0].id);
+  persist();
+}
+function mk(name, method, url){ const r = blank(); Object.assign(r,{name,method,url}); syncParamsFromUrl(r); return r; }
+function persist(){ store.set('relay.collections', collections); store.set('relay.history', history); store.set('relay.open', [...openColl]); }
+
+/* ---------- url <-> params ---------- */
+function syncParamsFromUrl(r){
+  const i = r.url.indexOf('?');
+  const kept = r.params.filter(p => !p.on && (p.k||p.v));
+  let rows = [];
+  if(i > -1){
+    const q = r.url.slice(i+1).split('#')[0];
+    q.split('&').filter(Boolean).forEach(pair => {
+      const [k, ...v] = pair.split('=');
+      rows.push({on:true, k:dec(k), v:dec(v.join('='))});
+    });
+  }
+  r.params = [...rows, ...kept, {on:true,k:'',v:''}];
+}
+function dec(s){ try{ return decodeURIComponent(s.replace(/\+/g,' ')) }catch{ return s } }
+function rebuildUrlFromParams(r){
+  const base = r.url.split('?')[0].split('#')[0];
+  const hash = r.url.includes('#') ? '#' + r.url.split('#').slice(1).join('#') : '';
+  const q = r.params.filter(p => p.on && p.k).map(p => encodeURIComponent(p.k) + (p.v!=='' ? '=' + encodeURIComponent(p.v) : '')).join('&');
+  r.url = base + (q ? '?' + q : '') + hash;
+}
+
+/* ---------- key/value editor ---------- */
+function kvEditor(rows, onChange, ph){
+  const t = document.createElement('table'); t.className = 'kv';
+  const draw = () => {
+    t.innerHTML = '';
+    rows.forEach((row, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="c"><input type="checkbox" ${row.on?'checked':''}></td>
+        <td><input type="text" placeholder="${ph[0]}" value="${esc(row.k)}" data-f="k"></td>
+        <td><input type="text" placeholder="${ph[1]}" value="${esc(row.v)}" data-f="v"></td>
+        <td class="c"><button class="ic x" title="Remove">✕</button></td>`;
+      tr.querySelector('input[type=checkbox]').onchange = e => { row.on = e.target.checked; onChange(); };
+      $$('input[type=text]', tr).forEach(inp => inp.oninput = e => {
+        row[inp.dataset.f] = inp.value;
+        if(i === rows.length-1 && (row.k||row.v)){ rows.push({on:true,k:'',v:''}); const n = document.createElement('tr'); draw(); const f = t.querySelectorAll('tr')[i]?.querySelector(`input[data-f="${inp.dataset.f}"]`); f && (f.focus(), f.setSelectionRange(f.value.length,f.value.length)); }
+        onChange();
+      });
+      tr.querySelector('.x').onclick = () => { rows.splice(i,1); if(!rows.length) rows.push({on:true,k:'',v:''}); draw(); onChange(); };
+      t.appendChild(tr);
+    });
+  };
+  draw();
+  return t;
+}
+
+/* ---------- render request panel ---------- */
+function renderReq(){
+  $('#method').value = req.method;
+  if(document.activeElement !== $('#url')) $('#url').value = req.url;
+  if(document.activeElement !== $('#reqName')) $('#reqName').value = req.name;
+  $('#nParams').textContent = req.params.filter(p=>p.on&&p.k).length;
+  $('#nHeaders').textContent = req.headers.filter(p=>p.on&&p.k).length;
+  $$('#reqTabs .tab').forEach(b => b.classList.toggle('active', b.dataset.rt === reqTab));
+  const box = $('#reqBody'); box.innerHTML = '';
+  if(reqTab === 'params'){
+    box.appendChild(kvEditor(req.params, () => { rebuildUrlFromParams(req); $('#url').value = req.url; $('#nParams').textContent = req.params.filter(p=>p.on&&p.k).length; }, ['key','value']));
+  } else if(reqTab === 'headers'){
+    box.appendChild(kvEditor(req.headers, () => { $('#nHeaders').textContent = req.headers.filter(p=>p.on&&p.k).length; }, ['Header','Value']));
+  } else if(reqTab === 'body'){
+    const seg = document.createElement('div'); seg.className='row';
+    seg.innerHTML = `<div class="seg">${[['none','None'],['json','JSON'],['text','Text'],['form','Form URL-encoded']].map(([v,l])=>`<button data-bm="${v}" class="${req.bodyMode===v?'on':''}">${l}</button>`).join('')}</div>
+      ${req.bodyMode==='json'?'<button class="btn ghost sm" id="fmtJson">Beautify</button><span class="hint" id="jsonErr"></span>':''}`;
+    box.appendChild(seg);
+    $$('[data-bm]', seg).forEach(b => b.onclick = () => { req.bodyMode = b.dataset.bm; renderReq(); });
+    if(req.bodyMode === 'none'){
+      const p = document.createElement('p'); p.className='hint'; p.textContent='This request has no body.'; box.appendChild(p);
+    } else {
+      const wrap = document.createElement('div'); wrap.style.height='calc(100% - 44px)';
+      const ta = document.createElement('textarea'); ta.spellcheck=false; ta.value = req.body;
+      ta.placeholder = req.bodyMode==='form' ? 'name=Ada&role=engineer  (one key=value per line or & separated)' : req.bodyMode==='json' ? '{\n  "key": "value"\n}' : 'Raw text body';
+      ta.oninput = () => { req.body = ta.value; if(req.bodyMode==='json') checkJson(); };
+      ta.onkeydown = e => { if(e.key==='Tab'){ e.preventDefault(); const s=ta.selectionStart; ta.setRangeText('  ',s,ta.selectionEnd,'end'); req.body=ta.value; } };
+      wrap.appendChild(ta); box.appendChild(wrap);
+      const f = $('#fmtJson', box);
+      if(f) f.onclick = () => { try{ req.body = JSON.stringify(JSON.parse(req.body),null,2); ta.value = req.body; checkJson(); }catch(e){ checkJson(); } };
+      function checkJson(){ const el=$('#jsonErr',box); if(!el) return; if(!req.body.trim()){ el.textContent=''; return;} try{ JSON.parse(req.body); el.textContent='✓ valid JSON'; el.style.color='var(--ok)'; }catch(e){ el.textContent='✗ '+e.message; el.style.color='var(--sds-4)'; } }
+      checkJson();
+    }
+  } else if(reqTab === 'auth'){
+    const a = req.auth;
+    box.innerHTML = `<div class="row"><label>Type</label><div class="seg">${[['none','None'],['bearer','Bearer token'],['basic','Basic auth']].map(([v,l])=>`<button data-at="${v}" class="${a.type===v?'on':''}">${l}</button>`).join('')}</div></div>
+      ${a.type==='bearer'?`<input class="field" id="aTok" placeholder="Token" value="${esc(a.token)}" style="font-family:var(--mono)">`:''}
+      ${a.type==='basic'?`<div class="row"><input class="field" id="aUser" placeholder="Username" value="${esc(a.user)}" style="flex:1"><input class="field" id="aPass" type="password" placeholder="Password" value="${esc(a.pass)}" style="flex:1"></div>`:''}
+      ${a.type==='none'?'<p class="hint">No authorization header will be added.</p>':'<p class="hint">Added as an <code>Authorization</code> header when you send.</p>'}`;
+    $$('[data-at]', box).forEach(b => b.onclick = () => { a.type = b.dataset.at; renderReq(); });
+    const bind = (id,k) => { const el=$(id,box); if(el) el.oninput = () => a[k] = el.value; };
+    bind('#aTok','token'); bind('#aUser','user'); bind('#aPass','pass');
+  }
+}
+
+/* ---------- sidebar ---------- */
+function renderSide(){
+  $('#nColl').textContent = collections.reduce((n,c)=>n+c.requests.length,0);
+  $('#nHist').textContent = history.length;
+  $$('.tab[data-side]').forEach(b => b.classList.toggle('active', b.dataset.side === sideTab));
+  const box = $('#sideBody'); box.innerHTML = '';
+  if(sideTab === 'collections'){
+    const act = document.createElement('div'); act.className='side-actions';
+    act.innerHTML = `<button class="btn ghost sm" id="newReq" style="flex:1">+ New request</button><button class="btn ghost sm" id="newColl" style="flex:1">+ Collection</button>`;
+    box.appendChild(act);
+    $('#newReq',act).onclick = () => { req = blank(); savedRef = null; res = null; renderAll(); $('#url').focus(); };
+    $('#newColl',act).onclick = () => { const n = prompt('Collection name'); if(n && n.trim()){ const c={id:uid(),name:n.trim(),requests:[]}; collections.push(c); openColl.add(c.id); persist(); renderSide(); } };
+    if(!collections.length) box.insertAdjacentHTML('beforeend','<div class="empty">No collections yet.<br>Save a request to start one.</div>');
+    collections.forEach(c => {
+      const d = document.createElement('div'); d.className = 'coll' + (openColl.has(c.id)?' open':'');
+      d.innerHTML = `<div class="coll-h"><span class="car">▶</span><span class="name">${esc(c.name)}</span><span class="hint">${c.requests.length}</span>
+        <span class="acts"><button class="ic" data-a="ren" title="Rename">✎</button><button class="ic" data-a="del" title="Delete">🗑</button></span></div>
+        <div class="coll-items">${c.requests.map(r=>`<div class="req ${savedRef&&savedRef.rid===r.id?'active':''}" data-rid="${r.id}"><span class="m ${r.method}">${r.method}</span><span class="t">${esc(r.name)}<span class="u">${esc(r.url||'—')}</span></span><span class="acts"><button class="ic" data-a="dup" title="Duplicate">⧉</button><button class="ic" data-a="rm" title="Delete">✕</button></span></div>`).join('') || '<div class="hint" style="padding:6px 8px">Empty</div>'}</div>`;
+      $('.coll-h',d).onclick = e => {
+        const a = e.target.closest('[data-a]')?.dataset.a;
+        if(a === 'ren'){ const n = prompt('Rename collection', c.name); if(n&&n.trim()){ c.name=n.trim(); persist(); renderSide(); } return; }
+        if(a === 'del'){ if(confirm(`Delete collection "${c.name}" and its ${c.requests.length} request(s)?`)){ collections = collections.filter(x=>x!==c); persist(); renderSide(); } return; }
+        openColl.has(c.id) ? openColl.delete(c.id) : openColl.add(c.id); persist(); renderSide();
+      };
+      $$('.req', d).forEach(el => el.onclick = e => {
+        const r = c.requests.find(x => x.id === el.dataset.rid);
+        const a = e.target.closest('[data-a]')?.dataset.a;
+        if(a === 'rm'){ c.requests = c.requests.filter(x=>x!==r); if(savedRef?.rid===r.id) savedRef=null; persist(); renderSide(); return; }
+        if(a === 'dup'){ const i=c.requests.indexOf(r); c.requests.splice(i+1,0,{...structuredClone(r),id:uid(),name:r.name+' copy'}); persist(); renderSide(); return; }
+        req = structuredClone(r); savedRef = {cid:c.id, rid:r.id}; res = null; renderAll();
+      });
+      box.appendChild(d);
+    });
+  } else {
+    const act = document.createElement('div'); act.className='side-actions';
+    act.innerHTML = `<button class="btn ghost sm" id="clrH" style="flex:1">Clear history</button>`;
+    box.appendChild(act);
+    $('#clrH',act).onclick = () => { history=[]; persist(); renderSide(); };
+    if(!history.length) box.insertAdjacentHTML('beforeend','<div class="empty">Sent requests show up here.</div>');
+    history.forEach(h => {
+      const d = document.createElement('div'); d.className='req';
+      d.innerHTML = `<span class="m ${h.req.method}">${h.req.method}</span><span class="t">${esc(h.req.url)}<span class="u">${h.status||'ERR'} · ${h.time}ms · ${new Date(h.at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span></span>`;
+      d.onclick = () => { req = structuredClone(h.req); req.id = uid(); savedRef=null; res=null; renderAll(); };
+      box.appendChild(d);
+    });
+  }
+}
+
+/* ---------- build + send ---------- */
+function buildFetch(r){
+  let url = r.url.trim();
+  if(!url) throw new Error('Enter a URL first.');
+  if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(url)) url = (/^(localhost|127\.|\[::1\])/i.test(url) ? 'http://' : 'https://') + url;
+  const headers = new Headers();
+  r.headers.filter(h=>h.on&&h.k.trim()).forEach(h => { try{ headers.append(h.k.trim(), h.v) }catch{} });
+  if(r.auth.type==='bearer' && r.auth.token) headers.set('Authorization','Bearer '+r.auth.token);
+  if(r.auth.type==='basic') headers.set('Authorization','Basic '+btoa(unescape(encodeURIComponent(r.auth.user+':'+r.auth.pass))));
+  let body;
+  const canBody = !['GET','HEAD'].includes(r.method);
+  if(canBody && r.bodyMode!=='none' && r.body.length){
+    if(r.bodyMode==='json'){ body = r.body; if(!headers.has('Content-Type')) headers.set('Content-Type','application/json'); }
+    else if(r.bodyMode==='text'){ body = r.body; if(!headers.has('Content-Type')) headers.set('Content-Type','text/plain'); }
+    else { body = r.body.split(/\n|&/).map(s=>s.trim()).filter(Boolean).map(s=>{const [k,...v]=s.split('=');return encodeURIComponent(dec(k))+'='+encodeURIComponent(dec(v.join('=')))}).join('&'); if(!headers.has('Content-Type')) headers.set('Content-Type','application/x-www-form-urlencoded'); }
+  }
+  return { url, init: { method: r.method, headers, body, redirect:'follow', cache:'no-store' } };
+}
+
+async function send(){
+  if(controller){ controller.abort(); return; }
+  let f;
+  try{ f = buildFetch(req); }catch(e){ res = {error:e.message, hint:''}; renderRes(); return; }
+  controller = new AbortController();
+  const btn = $('#send'); btn.innerHTML = '<span class="spin"></span>Cancel';
+  res = {loading:true}; renderRes();
+  const t0 = performance.now();
+  try{
+    const r = await fetch(f.url, {...f.init, signal: controller.signal});
+    const tHead = performance.now();
+    const buf = await r.arrayBuffer();
+    const t1 = performance.now();
+    const ct = r.headers.get('content-type') || '';
+    const text = new TextDecoder().decode(buf);
+    const hdrs = [...r.headers.entries()];
+    res = { status:r.status, statusText:r.statusText, ok:r.ok, headers:hdrs, text, ct, size:buf.byteLength,
+            time:Math.round(t1-t0), ttfb:Math.round(tHead-t0), dl:Math.round(t1-tHead), url:r.url, redirected:r.redirected };
+    pushHistory(res.status, res.time);
+  }catch(e){
+    const aborted = e.name === 'AbortError';
+    res = { error: aborted ? 'Request cancelled.' : (e.message || 'Request failed'), time:Math.round(performance.now()-t0),
+      hint: aborted ? '' : 'The browser blocked or could not complete the request. Common causes: the server does not send CORS headers (Access-Control-Allow-Origin), the host is unreachable, a mixed http/https request, or an ad-blocker. Try an API that allows cross-origin requests, such as httpbin.org or jsonplaceholder.typicode.com.' };
+    if(!aborted) pushHistory(0, res.time);
+  }
+  controller = null; btn.textContent = 'Send';
+  resTab = res.error ? 'body' : resTab;
+  renderRes();
+}
+function pushHistory(status, time){
+  history.unshift({ at:Date.now(), status, time, req: structuredClone(req) });
+  history = history.slice(0,40); persist(); renderSide();
+}
+
+/* ---------- render response ---------- */
+function prettyBody(){
+  const {text, ct} = res;
+  if(/json/i.test(ct) || /^\s*[\[{]/.test(text)){
+    try{ return {html: highlight(JSON.stringify(JSON.parse(text),null,2)), copy: JSON.stringify(JSON.parse(text),null,2)}; }catch{}
+  }
+  return {html: esc(text), copy: text};
+}
+function highlight(json){
+  return esc(json).replace(/("(?:\\.|[^"\\])*")(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g, (m, s, colon, b) => {
+    if(s) return colon ? `<span class="j-k">${s}</span>${colon}` : `<span class="j-s">${s}</span>`;
+    if(b) return `<span class="j-b">${m}</span>`;
+    return `<span class="j-n">${m}</span>`;
+  });
+}
+const fmtSize = n => n < 1024 ? n+' B' : n < 1048576 ? (n/1024).toFixed(1)+' KB' : (n/1048576).toFixed(2)+' MB';
+function renderRes(){
+  const box = $('#resBody'), stat = $('#stat');
+  $$('#resTabs .tab').forEach(b => b.classList.toggle('active', b.dataset.st === resTab));
+  $('#nResH').textContent = res?.headers ? res.headers.length : 0;
+  stat.innerHTML = '';
+  if(!res){ box.innerHTML = `<div class="placeholder"><div><div class="big">⌁</div>Hit <b>Send</b> to see the response here.<br><span class="hint">or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd></span></div></div>`; return; }
+  if(res.loading){ box.innerHTML = `<div class="placeholder"><div><span class="spin" style="border-color:rgba(236,119,95,.3);border-top-color:var(--sds-4);width:22px;height:22px"></span><br>Waiting for response…</div></div>`; return; }
+  if(res.error){
+    stat.innerHTML = `<span class="badge err">ERROR</span>${res.time!=null?`<span><b>${res.time}</b> ms</span>`:''}`;
+    box.innerHTML = `<div class="errbox"><h4>${esc(res.error)}</h4><div class="hint">${esc(res.hint||'')}</div></div>`; return;
+  }
+  const cls = 's'+String(res.status)[0];
+  stat.innerHTML = `<span class="badge ${cls}">${res.status} ${esc(res.statusText)}</span><span>Time <b>${res.time} ms</b></span><span>Size <b>${fmtSize(res.size)}</b></span>`;
+  if(resTab === 'body'){
+    if(!res.text) { box.innerHTML = '<div class="placeholder">Empty response body.</div>'; return; }
+    box.innerHTML = `<pre class="out">${prettyBody().html}</pre>`;
+  } else if(resTab === 'raw'){
+    box.innerHTML = `<pre class="out">${esc(res.text)}</pre>`;
+  } else if(resTab === 'headers'){
+    box.innerHTML = `<table class="hdrs">${res.headers.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table>
+      <p class="hint">Browsers only expose headers the server allows via <code>Access-Control-Expose-Headers</code>.</p>`;
+  } else if(resTab === 'timing'){
+    const tot = Math.max(res.time,1), a = res.ttfb/tot*100, b = res.dl/tot*100;
+    box.innerHTML = `<div class="timing"><div class="tbar"><span style="width:${a}%;background:var(--sds-3)"></span><span style="width:${b}%;background:var(--sds-5)"></span></div>
+      <div class="tl"><span><i style="background:var(--sds-3)"></i>Waiting (request → first response)</span><b>${res.ttfb} ms</b></div>
+      <div class="tl"><span><i style="background:var(--sds-5)"></i>Download (body)</span><b>${res.dl} ms</b></div>
+      <div class="tl"><span>Total</span><b>${res.time} ms</b></div>
+      <div class="tl"><span>Final URL</span><span style="font-family:var(--mono);font-size:12px;max-width:60%;word-break:break-all;text-align:right">${esc(res.url)}</span></div>
+      <div class="tl"><span>Redirected</span><b>${res.redirected?'yes':'no'}</b></div></div>`;
+  }
+}
+
+/* ---------- cURL import / export ---------- */
+function shellSplit(s){
+  s = s.replace(/\\\r?\n/g,' ').replace(/\^\r?\n/g,' ').trim();
+  const out=[]; let cur='', q=null, has=false;
+  for(let i=0;i<s.length;i++){
+    const c=s[i];
+    if(q==="'"){ if(c==="'") q=null; else cur+=c; }
+    else if(q==='"'){ if(c==='\\' && /["\\$`]/.test(s[i+1]||'')){ cur+=s[++i]; } else if(c==='"') q=null; else cur+=c; }
+    else if(c==="'"||c==='"'){ q=c; has=true; }
+    else if(c==='\\'){ cur+=s[++i]||''; has=true; }
+    else if(/\s/.test(c)){ if(cur||has){ out.push(cur); cur=''; has=false; } }
+    else { cur+=c; }
+  }
+  if(cur||has) out.push(cur);
+  return out;
+}
+function parseCurl(text){
+  const t = shellSplit(text);
+  if(!t.length || t[0].toLowerCase()!=='curl') throw new Error('That does not look like a cURL command (it should start with "curl").');
+  const r = blank(); let method=null, data=[], url='', form=false;
+  const takes = new Set(['-X','--request','-H','--header','-d','--data','--data-raw','--data-binary','--data-ascii','--data-urlencode','-u','--user','--url','--json','-A','--user-agent','-e','--referer','-b','--cookie','-F','--form']);
+  for(let i=1;i<t.length;i++){
+    let a=t[i], val=null;
+    if(a.startsWith('--') && a.includes('=')){ [a,val] = [a.slice(0,a.indexOf('=')), a.slice(a.indexOf('=')+1)]; }
+    else if(/^-[A-Za-z]./.test(a) && takes.has(a.slice(0,2))){ val=a.slice(2); a=a.slice(0,2); }
+    else if(takes.has(a)) val = t[++i];
+    switch(a){
+      case '-X': case '--request': method = (val||'').toUpperCase(); break;
+      case '-H': case '--header': { const k=val.indexOf(':'); if(k>0) r.headers.push({on:true,k:val.slice(0,k).trim(),v:val.slice(k+1).trim()}); break; }
+      case '-d': case '--data': case '--data-raw': case '--data-binary': case '--data-ascii': case '--data-urlencode': data.push(val); break;
+      case '--json': data.push(val); r.headers.push({on:true,k:'Content-Type',v:'application/json'}); break;
+      case '-u': case '--user': { const k=val.indexOf(':'); r.auth={type:'basic',user:k>-1?val.slice(0,k):val,pass:k>-1?val.slice(k+1):'',token:''}; break; }
+      case '-A': case '--user-agent': r.headers.push({on:true,k:'User-Agent',v:val}); break;
+      case '-e': case '--referer': r.headers.push({on:true,k:'Referer',v:val}); break;
+      case '-b': case '--cookie': r.headers.push({on:true,k:'Cookie',v:val}); break;
+      case '-I': case '--head': method='HEAD'; break;
+      case '--url': url=val; break;
+      case '-F': case '--form': form=true; break;
+      default: if(!a.startsWith('-') && !url) url=a;
+    }
+  }
+  if(!url) throw new Error('No URL found in the cURL command.');
+  r.url = url;
+  if(data.length){ r.body = data.join('&'); }
+  r.method = method || (data.length ? 'POST' : 'GET');
+  // header cleanup: bearer, content-type -> body mode
+  const idxAuth = r.headers.findIndex(h=>h.k.toLowerCase()==='authorization');
+  if(idxAuth>-1 && /^bearer\s/i.test(r.headers[idxAuth].v)){ r.auth={type:'bearer',user:'',pass:'',token:r.headers[idxAuth].v.replace(/^bearer\s+/i,'')}; r.headers.splice(idxAuth,1); }
+  if(data.length){
+    const ct = (r.headers.find(h=>h.k.toLowerCase()==='content-type')?.v||'').toLowerCase();
+    if(ct.includes('json') || /^\s*[\[{]/.test(r.body)){ r.bodyMode='json'; try{ r.body = JSON.stringify(JSON.parse(r.body),null,2);}catch{} }
+    else if(ct.includes('x-www-form-urlencoded') || (!ct && /^[^=\s]+=/.test(r.body))){ r.bodyMode='form'; r.headers = r.headers.filter(h=>h.k.toLowerCase()!=='content-type'); }
+    else r.bodyMode='text';
+  }
+  r.headers.push({on:true,k:'',v:''});
+  syncParamsFromUrl(r);
+  try{ r.name = r.method+' '+new URL(r.url).pathname; }catch{ r.name='Imported request'; }
+  return r;
+}
+const q = s => "'" + String(s).replace(/'/g, "'\\''") + "'";
+function toCurl(r){
+  const f = buildFetch(r);
+  let c = `curl -X ${r.method} ${q(f.url)}`;
+  f.init.headers.forEach((v,k) => c += ` \\\n  -H ${q(k+': '+v)}`);
+  if(f.init.body) c += ` \\\n  --data-raw ${q(f.init.body)}`;
+  return c;
+}
+
+/* ---------- misc ---------- */
+let tt; function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('show'),1800); }
+async function copy(text, msg){ try{ await navigator.clipboard.writeText(text); toast(msg); }catch{ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast(msg); } }
+function renderAll(){ renderReq(); renderSide(); renderRes(); }
+
+/* ---------- events ---------- */
+$('#send').onclick = send;
+$('#method').onchange = e => { req.method = e.target.value; };
+$('#url').oninput = e => { req.url = e.target.value; syncParamsFromUrl(req); $('#nParams').textContent = req.params.filter(p=>p.on&&p.k).length; if(reqTab==='params') renderReq(); };
+$('#reqName').oninput = e => { req.name = e.target.value; };
+$('#url').addEventListener('keydown', e => { if(e.key==='Enter') send(); });
+document.addEventListener('keydown', e => { if((e.ctrlKey||e.metaKey) && e.key==='Enter'){ e.preventDefault(); send(); } });
+$$('#reqTabs .tab').forEach(b => b.onclick = () => { reqTab=b.dataset.rt; renderReq(); });
+$$('#resTabs .tab').forEach(b => b.onclick = () => { resTab=b.dataset.st; renderRes(); });
+$$('.tab[data-side]').forEach(b => b.onclick = () => { sideTab=b.dataset.side; renderSide(); });
+$('#btnCopyRes').onclick = () => { if(res?.text!=null) copy(resTab==='body'?prettyBody().copy:res.text,'Response copied'); else toast('Nothing to copy'); };
+$('#btnCopyCurl').onclick = () => { try{ copy(toCurl(req),'cURL copied'); }catch(e){ toast(e.message); } };
+
+$$('dialog [data-close]').forEach(b => b.onclick = () => b.closest('dialog').close());
+$$('dialog').forEach(d => d.addEventListener('click', e => { if(e.target===d) d.close(); }));
+$('#btnImport').onclick = () => { $('#curlText').value=''; $('#dlgImport').showModal(); $('#curlText').focus(); };
+$('#doImport').onclick = () => {
+  try{ req = parseCurl($('#curlText').value); savedRef=null; res=null; reqTab = req.bodyMode!=='none' ? 'body' : 'params'; $('#dlgImport').close(); renderAll(); toast('Imported from cURL'); }
+  catch(e){ toast(e.message); }
+};
+
+function fillSaveColls(){
+  const sel = $('#saveColl');
+  sel.innerHTML = collections.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('') + '<option value="__new">+ New collection…</option>';
+  if(savedRef) sel.value = savedRef.cid; else if(!collections.length) sel.value='__new';
+  $('#saveNewColl').style.display = sel.value==='__new' ? 'block' : 'none';
+}
+$('#saveColl').onchange = () => { $('#saveNewColl').style.display = $('#saveColl').value==='__new' ? 'block' : 'none'; };
+$('#btnSave').onclick = () => { $('#saveName').value = req.name; fillSaveColls(); $('#dlgSave').showModal(); $('#saveName').select(); };
+$('#doSave').onclick = () => {
+  const name = $('#saveName').value.trim() || 'Untitled request';
+  let cid = $('#saveColl').value, coll;
+  if(cid === '__new'){
+    const n = $('#saveNewColl').value.trim(); if(!n){ toast('Name the new collection'); return; }
+    coll = {id:uid(), name:n, requests:[]}; collections.push(coll);
+  } else coll = collections.find(c=>c.id===cid);
+  req.name = name;
+  const snap = structuredClone(req);
+  if(savedRef && savedRef.cid===coll.id){
+    const i = coll.requests.findIndex(r=>r.id===savedRef.rid);
+    if(i>-1){ snap.id = savedRef.rid; coll.requests[i]=snap; } else coll.requests.push(snap);
+  } else { snap.id = uid(); coll.requests.push(snap); }
+  savedRef = {cid:coll.id, rid:snap.id}; req.id = snap.id;
+  openColl.add(coll.id); sideTab='collections'; persist();
+  $('#dlgSave').close(); renderAll(); toast('Saved to '+coll.name);
+};
+
+renderAll();
+})();
+</script>
+</body>
+</html>
